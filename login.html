@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户登录</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        .form-button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .form-button:hover {
+            background-color: #45a049;
+        }
+        .toggle-form {
+            margin-top: 15px;
+            text-align: center;
+        }
+        .toggle-form a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="login-form">
+        <h1>用户登录</h1>
+        <div class="form-group">
+            <label for="login-username">用户名</label>
+            <input type="text" id="login-username" required>
+        </div>
+        <div class="form-group">
+            <label for="login-password">密码</label>
+            <input type="password" id="login-password" required>
+        </div>
+        <button class="form-button" onclick="login()">登录</button>
+        <div class="toggle-form">
+            没有账号？<a href="#" onclick="toggleForm('register')">注册</a>
+        </div>
+    </div>
+
+    <div id="register-form" style="display: none;">
+        <h1>用户注册</h1>
+        <div class="form-group">
+            <label for="register-username">用户名</label>
+            <input type="text" id="register-username" required>
+        </div>
+        <div class="form-group">
+            <label for="register-password">密码</label>
+            <input type="password" id="register-password" required>
+        </div>
+        <div class="form-group">
+            <label for="register-confirm">确认密码</label>
+            <input type="password" id="register-confirm" required>
+        </div>
+        <button class="form-button" onclick="register()">注册</button>
+        <div class="toggle-form">
+            已有账号？<a href="#" onclick="toggleForm('login')">登录</a>
+        </div>
+    </div>
+
+    <script>
+        // 切换登录/注册表单
+        function toggleForm(formType) {
+            if (formType === 'login') {
+                document.getElementById('login-form').style.display = 'block';
+                document.getElementById('register-form').style.display = 'none';
+            } else {
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('register-form').style.display = 'block';
+            }
+        }
+
+        // 注册功能
+        function register() {
+            const username = document.getElementById('register-username').value;
+            const password = document.getElementById('register-password').value;
+            const confirm = document.getElementById('register-confirm').value;
+
+            if (!username || !password || !confirm) {
+                alert('请填写所有字段');
+                return;
+            }
+
+            if (password !== confirm) {
+                alert('两次输入的密码不一致');
+                return;
+            }
+
+            // 检查用户名是否已存在
+            const users = JSON.parse(localStorage.getItem('users') || '{}');
+            if (users[username]) {
+                alert('用户名已存在');
+                return;
+            }
+
+            // 保存用户信息
+            users[username] = password;
+            localStorage.setItem('users', JSON.stringify(users));
+            alert('注册成功！请登录');
+            toggleForm('login');
+        }
+
+        // 登录功能
+        function login() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+
+            if (!username || !password) {
+                alert('请填写用户名和密码');
+                return;
+            }
+
+            const users = JSON.parse(localStorage.getItem('users') || '{}');
+            if (users[username] !== password) {
+                alert('用户名或密码错误');
+                return;
+            }
+
+            // 保存登录状态
+            localStorage.setItem('currentUser', username);
+            alert('登录成功！');
+            window.location.href = 'home.html';
+        }
+    </script>
+</body>
+</html>

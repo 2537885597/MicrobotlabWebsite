@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>博客编辑</title>
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.0/dist/quill.snow.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #editor {
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        .save-button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .save-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>博客编辑器</h1>
+    <div id="editor"></div>
+    <button class="save-button" onclick="saveContent()">保存内容</button>
+    
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.0/dist/quill.js"></script>
+    <script>
+        const quill = new Quill('#editor', {
+            theme: 'snow',
+            placeholder: '在这里写下你的博客内容...'
+        });
+        
+        // 加载保存的内容
+        const savedContent = localStorage.getItem('blogContent');
+        if (savedContent) {
+            quill.setContents(JSON.parse(savedContent));
+        }
+        
+        function saveContent() {
+            const content = quill.getContents();
+            localStorage.setItem('blogContent', JSON.stringify(content));
+            alert('内容已保存！');
+        }
+    </script>
+</body>
+</html>
