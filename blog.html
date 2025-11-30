@@ -3,55 +3,540 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>博客编辑</title>
+    <title>博客系统</title>
     <link href="https://cdn.jsdelivr.net/npm/quill@2.0.0/dist/quill.snow.css" rel="stylesheet">
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
+            background-color: #f5f5f5;
         }
-        #editor {
-            height: 300px;
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        
+        /* Tab样式 */
+        .tab-container {
+            display: flex;
             margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
         }
-        .save-button {
+        
+        .tab-button {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab-button.active {
+            color: #4CAF50;
+            border-bottom-color: #4CAF50;
+        }
+        
+        .tab-button:hover {
+            color: #45a049;
+        }
+        
+        /* Tab内容样式 */
+        .tab-content {
+            display: none;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* 搜索框样式 */
+        .search-container {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .search-button {
             padding: 10px 20px;
             background-color: #4CAF50;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 4px;
             cursor: pointer;
         }
-        .save-button:hover {
+        
+        .search-button:hover {
             background-color: #45a049;
+        }
+        
+        /* 博客卡片样式 */
+        .blog-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .blog-card {
+            background-color: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .blog-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .blog-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        
+        .blog-meta {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 15px;
+        }
+        
+        .blog-excerpt {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+        }
+        
+        /* 博客详情模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            overflow: auto;
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 800px;
+            position: relative;
+        }
+        
+        .close-button {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #999;
+            cursor: pointer;
+        }
+        
+        .close-button:hover {
+            color: #333;
+        }
+        
+        .modal-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .modal-meta {
+            font-size: 14px;
+            color: #999;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 15px;
+        }
+        
+        .modal-content-body {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        /* 编辑发布页样式 */
+        .editor-container {
+            margin-bottom: 20px;
+        }
+        
+        .title-input {
+            width: 100%;
+            padding: 12px 15px;
+            font-size: 18px;
+            font-weight: 600;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            outline: none;
+        }
+        
+        .title-input:focus {
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+        }
+        
+        #editor {
+            height: 300px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .editor-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #45a049;
+        }
+        
+        .btn-secondary {
+            background-color: #f5f5f5;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .btn-danger {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #da190b;
+        }
+        
+        /* 空状态样式 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .empty-state h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .blog-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tab-button {
+                padding: 10px 16px;
+                font-size: 14px;
+            }
+            
+            .modal-content {
+                margin: 10% auto;
+                padding: 20px;
+                width: 95%;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>博客编辑器</h1>
-    <div id="editor"></div>
-    <button class="save-button" onclick="saveContent()">保存内容</button>
+    <h1>博客系统</h1>
+    
+    <!-- Tab切换 -->
+    <div class="tab-container">
+        <button class="tab-button active" onclick="switchTab('blog-list')">博客广场</button>
+        <button class="tab-button" onclick="switchTab('blog-editor')">编辑发布</button>
+    </div>
+    
+    <!-- 博客广场展示页 -->
+    <div id="blog-list" class="tab-content active">
+        <!-- 搜索框 -->
+        <div class="search-container">
+            <input type="text" id="search-input" class="search-input" placeholder="搜索博客标题...">
+            <button class="search-button" onclick="searchBlogs()">搜索</button>
+        </div>
+        
+        <!-- 博客卡片网格 -->
+        <div id="blog-grid" class="blog-grid">
+            <!-- 博客卡片将通过JavaScript动态生成 -->
+        </div>
+    </div>
+    
+    <!-- 编辑发布页 -->
+    <div id="blog-editor" class="tab-content">
+        <div class="editor-container">
+            <input type="text" id="blog-title" class="title-input" placeholder="请输入博客标题...">
+            <div id="editor"></div>
+        </div>
+        
+        <div class="editor-buttons">
+            <button class="btn btn-secondary" onclick="clearEditor()">清空</button>
+            <button class="btn btn-primary" onclick="saveBlog()">发布博客</button>
+        </div>
+    </div>
+    
+    <!-- 博客详情模态框 -->
+    <div id="blog-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal()">&times;</span>
+            <h2 class="modal-title" id="modal-title"></h2>
+            <div class="modal-meta" id="modal-meta"></div>
+            <div class="modal-content-body" id="modal-content"></div>
+        </div>
+    </div>
     
     <script src="https://cdn.jsdelivr.net/npm/quill@2.0.0/dist/quill.js"></script>
     <script>
+        // 初始化Quill编辑器
         const quill = new Quill('#editor', {
             theme: 'snow',
-            placeholder: '在这里写下你的博客内容...'
+            placeholder: '在这里写下你的博客内容...',
+            modules: {
+                toolbar: [
+                    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'indent': '-1'}, { 'indent': '+1' }],
+                    [{ 'color': [] }, { 'background': [] }],
+                    [{ 'align': [] }],
+                    ['link', 'image'],
+                    ['clean']
+                ]
+            }
         });
         
-        // 加载保存的内容
-        const savedContent = localStorage.getItem('blogContent');
-        if (savedContent) {
-            quill.setContents(JSON.parse(savedContent));
+        // 博客数据本地存储键名
+        const BLOGS_KEY = 'blogs';
+        let currentBlogId = null;
+        
+        // 获取所有博客
+        function getBlogs() {
+            const blogs = localStorage.getItem(BLOGS_KEY);
+            return blogs ? JSON.parse(blogs) : [];
         }
         
-        function saveContent() {
-            const content = quill.getContents();
-            localStorage.setItem('blogContent', JSON.stringify(content));
-            alert('内容已保存！');
+        // 保存博客到本地存储
+        function saveBlogs(blogs) {
+            localStorage.setItem(BLOGS_KEY, JSON.stringify(blogs));
         }
+        
+        // 生成唯一ID
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+        
+        // Tab切换功能
+        function switchTab(tabName) {
+            // 移除所有tab的active状态
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // 添加当前tab的active状态
+            document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            // 如果切换到博客列表，重新加载博客
+            if (tabName === 'blog-list') {
+                loadBlogs();
+            }
+        }
+        
+        // 加载博客列表
+        function loadBlogs(blogs = null) {
+            const blogGrid = document.getElementById('blog-grid');
+            const blogsToShow = blogs || getBlogs();
+            
+            if (blogsToShow.length === 0) {
+                blogGrid.innerHTML = `
+                    <div class="empty-state">
+                        <h3>暂无博客</h3>
+                        <p>快来发布你的第一篇博客吧！</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            blogGrid.innerHTML = blogsToShow.map(blog => `
+                <div class="blog-card" onclick="openBlogDetail('${blog.id}')">
+                    <h3 class="blog-title">${blog.title}</h3>
+                    <div class="blog-meta">
+                        ${new Date(blog.createdAt).toLocaleString('zh-CN')}
+                    </div>
+                    <div class="blog-excerpt">${blog.content.replace(/<[^>]+>/g, '').substring(0, 100)}...</div>
+                </div>
+            `).join('');
+        }
+        
+        // 搜索博客
+        function searchBlogs() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const allBlogs = getBlogs();
+            
+            if (!searchTerm) {
+                loadBlogs();
+                return;
+            }
+            
+            const filteredBlogs = allBlogs.filter(blog => 
+                blog.title.toLowerCase().includes(searchTerm)
+            );
+            
+            loadBlogs(filteredBlogs);
+        }
+        
+        // 打开博客详情
+        function openBlogDetail(blogId) {
+            const blogs = getBlogs();
+            const blog = blogs.find(b => b.id === blogId);
+            
+            if (!blog) return;
+            
+            document.getElementById('modal-title').textContent = blog.title;
+            document.getElementById('modal-meta').textContent = 
+                `发布时间：${new Date(blog.createdAt).toLocaleString('zh-CN')}`;
+            document.getElementById('modal-content').innerHTML = blog.content;
+            
+            document.getElementById('blog-modal').style.display = 'block';
+        }
+        
+        // 关闭模态框
+        function closeModal() {
+            document.getElementById('blog-modal').style.display = 'none';
+        }
+        
+        // 点击模态框外部关闭
+        window.onclick = function(event) {
+            const modal = document.getElementById('blog-modal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+        
+        // 保存博客
+        function saveBlog() {
+            const title = document.getElementById('blog-title').value.trim();
+            const content = quill.root.innerHTML;
+            
+            if (!title) {
+                alert('请输入博客标题！');
+                return;
+            }
+            
+            if (!content || content === '<p><br></p>') {
+                alert('请输入博客内容！');
+                return;
+            }
+            
+            const blogs = getBlogs();
+            const blog = {
+                id: generateId(),
+                title: title,
+                content: content,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            
+            blogs.unshift(blog); // 添加到数组开头
+            saveBlogs(blogs);
+            
+            alert('博客发布成功！');
+            clearEditor();
+            
+            // 如果当前在博客列表页，重新加载
+            if (document.getElementById('blog-list').classList.contains('active')) {
+                loadBlogs();
+            }
+        }
+        
+        // 清空编辑器
+        function clearEditor() {
+            document.getElementById('blog-title').value = '';
+            quill.setText('');
+        }
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadBlogs();
+            
+            // 搜索框回车事件
+            document.getElementById('search-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchBlogs();
+                }
+            });
+        });
     </script>
 </body>
 </html>
