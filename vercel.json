@@ -9,8 +9,5 @@
       "src": "/(.*)",
       "dest": "/$1"
     }
-  ],
-  "env": {
-    "MONGODB_URI": "mongodb+srv://2537885597_db_user:RA9xk1oKf6WGvI2I@clustermicrobotlabblog.fywmlzh.mongodb.net/?appName=ClusterMicrobotLabBlog"
-  }
+  ]
 }
