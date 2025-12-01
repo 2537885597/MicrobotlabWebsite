@@ -10,12 +10,17 @@
             text-align: center;
             padding: 20px;
             background-color: #fce4ec;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
         .nav {
             display: flex;
             justify-content: center;
             gap: 20px;
-            margin-bottom: 30px;
+            margin-top: 20px;
         }
         .nav-button {
             padding: 10px 20px;
@@ -34,7 +39,7 @@
 <body>
     <h1>欢迎来到微小机实验室的网站</h1>
     <div class="nav">
-        <a href="birthday.html" class="nav-button" onclick="return checkBirthdayAccess()">生日祝福</a>
+        <a href="https://www.birthday.microbotlab.site" class="nav-button" onclick="return checkBirthdayAccess()">生日祝福</a>
         <a href="blog.html" class="nav-button" onclick="return checkBlogAccess()">博客</a>
         <a href="login.html" class="nav-button" id="login-logout-btn">用户登录</a>
     </div>
