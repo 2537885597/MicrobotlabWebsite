@@ -9,6 +9,7 @@
             font-family: Arial, sans-serif;
             text-align: center;
             padding: 20px;
+            background-color: #fce4ec;
         }
         .nav {
             display: flex;
@@ -18,7 +19,7 @@
         }
         .nav-button {
             padding: 10px 20px;
-            background-color: #4CAF50;
+            background-color: #81d4fa;
             color: white;
             border: none;
             border-radius: 5px;
@@ -26,16 +27,54 @@
             text-decoration: none;
         }
         .nav-button:hover {
-            background-color: #45a049;
+            background-color: #4fc3f7;
         }
     </style>
 </head>
 <body>
     <h1>欢迎来到微小机实验室的网站</h1>
     <div class="nav">
-        <a href="https://www.birthday.microbotlab.site" class="nav-button">生日祝福</a>
-        <a href="blog.html" class="nav-button">博客</a>
-        <a href="login.html" class="nav-button">用户登录</a>
+        <a href="birthday.html" class="nav-button" onclick="return checkBirthdayAccess()">生日祝福</a>
+        <a href="blog.html" class="nav-button" onclick="return checkBlogAccess()">博客</a>
+        <a href="login.html" class="nav-button" id="login-logout-btn">用户登录</a>
     </div>
+    
+    <script>
+        // 检查博客访问权限
+        function checkBlogAccess() {
+            const currentUser = localStorage.getItem('currentUser');
+            if (!currentUser) {
+                alert('请先登录或注册才能进入博客界面！');
+                return false;
+            }
+            return true;
+        }
+        
+        // 检查生日祝福访问权限
+        function checkBirthdayAccess() {
+            const currentUser = localStorage.getItem('currentUser');
+            // 唯一用户：只有用户名是"admin"或"虹宇"才能访问生日祝福
+            if (currentUser !== 'admin' && currentUser !== '虹宇') {
+                alert('抱歉，您没有访问生日祝福的权限！');
+                return false;
+            }
+            return true;
+        }
+        
+        // 页面加载时检查登录状态
+        window.onload = function() {
+            const currentUser = localStorage.getItem('currentUser');
+            const loginButton = document.getElementById('login-logout-btn');
+            if (currentUser) {
+                loginButton.textContent = '登出';
+                loginButton.onclick = function() {
+                    localStorage.removeItem('currentUser');
+                    alert('已登出！');
+                    window.location.reload();
+                    return false;
+                };
+            }
+        };
+    </script>
 </body>
 </html>

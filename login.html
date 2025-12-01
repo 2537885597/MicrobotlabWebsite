@@ -10,6 +10,7 @@
             max-width: 400px;
             margin: 0 auto;
             padding: 20px;
+            background-color: #fce4ec;
         }
         .form-group {
             margin-bottom: 15px;
@@ -17,31 +18,46 @@
         label {
             display: block;
             margin-bottom: 5px;
+            color: #333;
         }
         input {
             width: 100%;
-            padding: 8px;
+            padding: 10px;
             box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
         }
         .form-button {
-            padding: 10px 20px;
-            background-color: #4CAF50;
+            padding: 12px 20px;
+            background-color: #81d4fa;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             width: 100%;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
         }
         .form-button:hover {
-            background-color: #45a049;
+            background-color: #4fc3f7;
         }
         .toggle-form {
             margin-top: 15px;
             text-align: center;
         }
         .toggle-form a {
-            color: #4CAF50;
+            color: #81d4fa;
             text-decoration: none;
+            font-weight: 500;
+        }
+        .toggle-form a:hover {
+            text-decoration: underline;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 25px;
         }
     </style>
 </head>

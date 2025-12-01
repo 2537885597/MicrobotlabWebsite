@@ -17,7 +17,7 @@
             max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f5f5f5;
+            background-color: #fce4ec;
         }
         
         h1 {
@@ -46,12 +46,12 @@
         }
         
         .tab-button.active {
-            color: #4CAF50;
-            border-bottom-color: #4CAF50;
+            color: #81d4fa;
+            border-bottom-color: #81d4fa;
         }
         
         .tab-button:hover {
-            color: #45a049;
+            color: #4fc3f7;
         }
         
         /* Tab内容样式 */
@@ -84,7 +84,7 @@
         
         .search-button {
             padding: 10px 20px;
-            background-color: #4CAF50;
+            background-color: #81d4fa;
             color: white;
             border: none;
             border-radius: 4px;
@@ -92,7 +92,7 @@
         }
         
         .search-button:hover {
-            background-color: #45a049;
+            background-color: #4fc3f7;
         }
         
         /* 博客卡片样式 */
@@ -251,8 +251,8 @@
         }
         
         .title-input:focus {
-            border-color: #4CAF50;
-            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+            border-color: #81d4fa;
+            box-shadow: 0 0 0 2px rgba(129, 212, 250, 0.1);
         }
         
         #editor {
@@ -279,12 +279,12 @@
         }
         
         .btn-primary {
-            background-color: #4CAF50;
+            background-color: #81d4fa;
             color: white;
         }
         
         .btn-primary:hover {
-            background-color: #45a049;
+            background-color: #4fc3f7;
         }
         
         .btn-secondary {
@@ -654,6 +654,14 @@
         
         // 页面加载时初始化
         document.addEventListener('DOMContentLoaded', async function() {
+            // 检查访问权限
+            const currentUser = localStorage.getItem('currentUser');
+            if (!currentUser) {
+                alert('请先登录或注册才能进入博客界面！');
+                window.location.href = 'login.html';
+                return;
+            }
+            
             await loadBlogs();
             
             // 搜索框回车事件
