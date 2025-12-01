@@ -21,35 +21,8 @@ const options = {
   serverSelectionTimeoutMS: 5000, // 服务器选择超时时间
 };
 
-// 创建MongoClient实例
-let client;
-let clientPromise;
-
-// 仅在服务器端环境中创建连接
-if (typeof window === 'undefined') {
-  if (!client) {
-    client = new MongoClient(uri, options);
-  }
-  if (!clientPromise) {
-    clientPromise = client.connect();
-  }
-}
-
-// 导出连接函数
-async function connectToDatabase() {
-  if (typeof window !== 'undefined') {
-    throw new Error('Database connection should only be used on the server');
-  }
-  
-  if (!clientPromise) {
-    client = new MongoClient(uri, options);
-    clientPromise = client.connect();
-  }
-  
-  return clientPromise;
-}
-
 export default async function handler(req, res) {
+  let client;
   try {
     // 检查环境变量是否存在
     if (!uri) {
@@ -59,8 +32,9 @@ export default async function handler(req, res) {
       });
     }
     
-    // 连接到数据库
-    const client = await connectToDatabase();
+    // 创建MongoClient实例
+    client = new MongoClient(uri, options);
+    await client.connect();
     const db = client.db(dbName);
     const collection = db.collection(collectionName);
 
@@ -141,7 +115,10 @@ export default async function handler(req, res) {
     console.error('Detailed Error:', {
       message: error.message,
       stack: error.stack,
-      name: error.name
+      name: error.name,
+      uriExists: !!uri,
+      method: req.method,
+      url: req.url
     });
     
     // 根据错误类型返回不同的错误信息
@@ -151,18 +128,35 @@ export default async function handler(req, res) {
     if (error.name === 'MongoServerError') {
       errorMessage = 'Database connection error';
       errorDetail = 'Failed to connect to MongoDB. Please check your connection string and network settings.';
+    } else if (error.name === 'MongoNetworkError') {
+      errorMessage = 'Database network error';
+      errorDetail = 'Failed to connect to MongoDB server. Please check your network connection and server status.';
     } else if (error.name === 'MongooseError') {
       errorMessage = 'Database query error';
       errorDetail = 'Failed to execute database query. Please check your query syntax.';
     } else if (error.name === 'ReferenceError') {
       errorMessage = 'Code error';
       errorDetail = 'There is a reference error in the code. Please check the server logs.';
+    } else if (error.name === 'TypeError') {
+      errorMessage = 'Type error';
+      errorDetail = 'There is a type error in the code. Please check the server logs.';
     }
     
     return res.status(500).json({ 
       message: errorMessage,
       error: errorDetail,
-      originalError: error.message
+      originalError: error.message,
+      errorName: error.name,
+      uriExists: !!uri
     });
+  } finally {
+    // 确保在所有情况下都能正确关闭数据库连接
+    if (client) {
+      try {
+        await client.close();
+      } catch (closeError) {
+        console.error('Error closing database connection:', closeError);
+      }
+    }
   }
 }
