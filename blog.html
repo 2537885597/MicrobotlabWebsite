@@ -110,11 +110,41 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             cursor: pointer;
+            position: relative;
         }
         
         .blog-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .delete-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 24px;
+            height: 24px;
+            background-color: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 10;
+        }
+        
+        .blog-card:hover .delete-button {
+            opacity: 1;
+        }
+        
+        .delete-button:hover {
+            background-color: #ff0000;
         }
         
         .blog-title {
@@ -378,12 +408,22 @@
         let currentBlogId = null;
         
         // 获取所有博客
-        function getBlogs() {
-            const blogs = localStorage.getItem(BLOGS_KEY);
-            return blogs ? JSON.parse(blogs) : [];
+        async function getBlogs() {
+            try {
+                const response = await fetch('/api/blogs');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch blogs');
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching blogs:', error);
+                // 降级到本地存储
+                const blogs = localStorage.getItem(BLOGS_KEY);
+                return blogs ? JSON.parse(blogs) : [];
+            }
         }
         
-        // 保存博客到本地存储
+        // 保存博客到本地存储（降级方案）
         function saveBlogs(blogs) {
             localStorage.setItem(BLOGS_KEY, JSON.stringify(blogs));
         }
@@ -414,61 +454,80 @@
         }
         
         // 加载博客列表
-        function loadBlogs(blogs = null) {
-            const blogGrid = document.getElementById('blog-grid');
-            const blogsToShow = blogs || getBlogs();
-            
-            if (blogsToShow.length === 0) {
-                blogGrid.innerHTML = `
-                    <div class="empty-state">
-                        <h3>暂无博客</h3>
-                        <p>快来发布你的第一篇博客吧！</p>
+        async function loadBlogs(blogs = null) {
+            try {
+                const blogGrid = document.getElementById('blog-grid');
+                const blogsToShow = blogs || await getBlogs();
+                
+                if (blogsToShow.length === 0) {
+                    blogGrid.innerHTML = `
+                        <div class="empty-state">
+                            <h3>暂无博客</h3>
+                            <p>快来发布你的第一篇博客吧！</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                blogGrid.innerHTML = blogsToShow.map(blog => `
+                    <div class="blog-card" onclick="openBlogDetail('${blog._id || blog.id}')">
+                        <button class="delete-button" onclick="event.stopPropagation(); deleteBlog('${blog._id || blog.id}')">×</button>
+                        <h3 class="blog-title">${blog.title}</h3>
+                        <div class="blog-meta">
+                            ${new Date(blog.createdAt).toLocaleString('zh-CN')}
+                        </div>
+                        <div class="blog-excerpt">${blog.content.replace(/<[^>]+>/g, '').substring(0, 100)}...</div>
                     </div>
-                `;
-                return;
+                `).join('');
+            } catch (error) {
+                console.error('Error loading blogs:', error);
+                alert('加载博客失败，请重试！');
             }
-            
-            blogGrid.innerHTML = blogsToShow.map(blog => `
-                <div class="blog-card" onclick="openBlogDetail('${blog.id}')">
-                    <h3 class="blog-title">${blog.title}</h3>
-                    <div class="blog-meta">
-                        ${new Date(blog.createdAt).toLocaleString('zh-CN')}
-                    </div>
-                    <div class="blog-excerpt">${blog.content.replace(/<[^>]+>/g, '').substring(0, 100)}...</div>
-                </div>
-            `).join('');
         }
         
         // 搜索博客
-        function searchBlogs() {
-            const searchTerm = document.getElementById('search-input').value.toLowerCase();
-            const allBlogs = getBlogs();
-            
-            if (!searchTerm) {
-                loadBlogs();
-                return;
+        async function searchBlogs() {
+            try {
+                const searchTerm = document.getElementById('search-input').value.toLowerCase();
+                const allBlogs = await getBlogs();
+                
+                if (!searchTerm) {
+                    loadBlogs();
+                    return;
+                }
+                
+                const filteredBlogs = allBlogs.filter(blog => 
+                    blog.title.toLowerCase().includes(searchTerm)
+                );
+                
+                loadBlogs(filteredBlogs);
+            } catch (error) {
+                console.error('Error searching blogs:', error);
+                alert('搜索博客失败，请重试！');
             }
-            
-            const filteredBlogs = allBlogs.filter(blog => 
-                blog.title.toLowerCase().includes(searchTerm)
-            );
-            
-            loadBlogs(filteredBlogs);
         }
         
         // 打开博客详情
-        function openBlogDetail(blogId) {
-            const blogs = getBlogs();
-            const blog = blogs.find(b => b.id === blogId);
-            
-            if (!blog) return;
-            
-            document.getElementById('modal-title').textContent = blog.title;
-            document.getElementById('modal-meta').textContent = 
-                `发布时间：${new Date(blog.createdAt).toLocaleString('zh-CN')}`;
-            document.getElementById('modal-content').innerHTML = blog.content;
-            
-            document.getElementById('blog-modal').style.display = 'block';
+        async function openBlogDetail(blogId) {
+            try {
+                const blogs = await getBlogs();
+                const blog = blogs.find(b => (b._id || b.id) === blogId);
+                
+                if (!blog) {
+                    alert('未找到该博客！');
+                    return;
+                }
+                
+                document.getElementById('modal-title').textContent = blog.title;
+                document.getElementById('modal-meta').textContent = 
+                    `发布时间：${new Date(blog.createdAt).toLocaleString('zh-CN')}`;
+                document.getElementById('modal-content').innerHTML = blog.content;
+                
+                document.getElementById('blog-modal').style.display = 'block';
+            } catch (error) {
+                console.error('Error opening blog detail:', error);
+                alert('打开博客详情失败，请重试！');
+            }
         }
         
         // 关闭模态框
@@ -485,7 +544,7 @@
         }
         
         // 保存博客
-        function saveBlog() {
+        async function saveBlog() {
             const title = document.getElementById('blog-title').value.trim();
             const content = quill.root.innerHTML;
             
@@ -499,23 +558,40 @@
                 return;
             }
             
-            const blogs = getBlogs();
-            const blog = {
-                id: generateId(),
-                title: title,
-                content: content,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            };
-            
-            blogs.unshift(blog); // 添加到数组开头
-            saveBlogs(blogs);
-            
-            alert('博客发布成功！');
-            clearEditor();
-            
-            // 如果当前在博客列表页，重新加载
-            if (document.getElementById('blog-list').classList.contains('active')) {
+            try {
+                const response = await fetch('/api/blogs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ title, content })
+                });
+                
+                if (response.ok) {
+                    alert('博客发布成功！');
+                    clearEditor();
+                    loadBlogs();
+                } else {
+                    throw new Error('Failed to save blog');
+                }
+            } catch (error) {
+                console.error('Error saving blog:', error);
+                // 降级到本地存储
+                alert('API调用失败，将使用本地存储');
+                const blogs = await getBlogs();
+                const blog = {
+                    id: generateId(),
+                    title: title,
+                    content: content,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                
+                blogs.unshift(blog); // 添加到数组开头
+                saveBlogs(blogs);
+                
+                alert('博客已保存到本地！');
+                clearEditor();
                 loadBlogs();
             }
         }
@@ -526,14 +602,43 @@
             quill.setText('');
         }
         
+        // 删除博客
+        async function deleteBlog(blogId) {
+            if (!confirm('确定要删除这篇博客吗？')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/blogs?id=${blogId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    alert('博客删除成功！');
+                    loadBlogs();
+                } else {
+                    throw new Error('Failed to delete blog');
+                }
+            } catch (error) {
+                console.error('Error deleting blog:', error);
+                alert('API调用失败，将使用本地存储删除');
+                // 降级到本地存储
+                const blogs = await getBlogs();
+                const updatedBlogs = blogs.filter(blog => (blog._id || blog.id) !== blogId);
+                saveBlogs(updatedBlogs);
+                alert('博客已从本地存储中删除！');
+                loadBlogs();
+            }
+        }
+        
         // 页面加载时初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            loadBlogs();
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadBlogs();
             
             // 搜索框回车事件
-            document.getElementById('search-input').addEventListener('keypress', function(e) {
+            document.getElementById('search-input').addEventListener('keypress', async function(e) {
                 if (e.key === 'Enter') {
-                    searchBlogs();
+                    await searchBlogs();
                 }
             });
         });
