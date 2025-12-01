@@ -1,29 +1,19 @@
-import { sql } from '@vercel/postgres';
+import { MongoClient, ObjectId } from 'mongodb';
 
-// 初始化数据库表
-async function initDatabase() {
-  try {
-    // 创建blogs表
-    await sql`
-      CREATE TABLE IF NOT EXISTS blogs (
-        id SERIAL PRIMARY KEY,
-        title VARCHAR(255) NOT NULL,
-        content TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `;
-    console.log('Database initialized successfully');
-  } catch (error) {
-    console.error('Error initializing database:', error);
-  }
-}
+// 从环境变量获取数据库连接字符串
+const uri = process.env.MONGODB_URI;
+const client = new MongoClient(uri);
 
-// 调用初始化函数
-initDatabase();
+// 数据库和集合名称
+const dbName = 'birthdayBlog';
+const collectionName = 'blogs';
 
 export default async function handler(req, res) {
   try {
+    await client.connect();
+    const db = client.db(dbName);
+    const collection = db.collection(collectionName);
+
     // 设置CORS头
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -36,11 +26,8 @@ export default async function handler(req, res) {
 
     // GET请求：获取所有博客
     if (req.method === 'GET') {
-      const { rows } = await sql`
-        SELECT * FROM blogs 
-        ORDER BY created_at DESC;
-      `;
-      return res.status(200).json(rows);
+      const blogs = await collection.find().sort({ createdAt: -1 }).toArray();
+      return res.status(200).json(blogs);
     }
 
     // POST请求：创建博客
@@ -51,13 +38,15 @@ export default async function handler(req, res) {
         return res.status(400).json({ message: 'Title and content are required' });
       }
       
-      const { rows } = await sql`
-        INSERT INTO blogs (title, content) 
-        VALUES (${title}, ${content})
-        RETURNING *;
-      `;
+      const blog = {
+        title,
+        content,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
       
-      return res.status(201).json(rows[0]);
+      const result = await collection.insertOne(blog);
+      return res.status(201).json({ ...blog, _id: result.insertedId });
     }
 
     // PUT请求：更新博客
@@ -68,18 +57,16 @@ export default async function handler(req, res) {
         return res.status(400).json({ message: 'ID, title, and content are required' });
       }
       
-      const { rows } = await sql`
-        UPDATE blogs 
-        SET title = ${title}, content = ${content}, updated_at = CURRENT_TIMESTAMP
-        WHERE id = ${id}
-        RETURNING *;
-      `;
+      const result = await collection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: { title, content, updatedAt: new Date() } }
+      );
       
-      if (rows.length === 0) {
+      if (result.matchedCount === 0) {
         return res.status(404).json({ message: 'Blog not found' });
       }
       
-      return res.status(200).json(rows[0]);
+      return res.status(200).json({ success: true });
     }
 
     // DELETE请求：删除博客
@@ -90,13 +77,9 @@ export default async function handler(req, res) {
         return res.status(400).json({ message: 'ID is required' });
       }
       
-      const { rows } = await sql`
-        DELETE FROM blogs 
-        WHERE id = ${id}
-        RETURNING *;
-      `;
+      const result = await collection.deleteOne({ _id: new ObjectId(id) });
       
-      if (rows.length === 0) {
+      if (result.deletedCount === 0) {
         return res.status(404).json({ message: 'Blog not found' });
       }
       
@@ -107,5 +90,7 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('Error:', error);
     return res.status(500).json({ message: 'Internal server error' });
+  } finally {
+    await client.close();
   }
 }
