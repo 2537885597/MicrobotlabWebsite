@@ -75,6 +75,8 @@
         <button class="form-button" onclick="login()">登录</button>
         <div class="toggle-form">
             没有账号？<a href="#" onclick="toggleForm('register')">注册</a>
+            <span style="margin: 0 10px;">|</span>
+            <a href="#" onclick="toggleForm('reset')">忘记密码？</a>
         </div>
     </div>
 
@@ -97,21 +99,47 @@
             已有账号？<a href="#" onclick="toggleForm('login')">登录</a>
         </div>
     </div>
+    
+    <div id="reset-form" style="display: none;">
+        <h1>重置密码</h1>
+        <div class="form-group">
+            <label for="reset-username">用户名</label>
+            <input type="text" id="reset-username" required>
+        </div>
+        <div class="form-group">
+            <label for="reset-new-password">新密码</label>
+            <input type="password" id="reset-new-password" required>
+        </div>
+        <div class="form-group">
+            <label for="reset-confirm-password">确认新密码</label>
+            <input type="password" id="reset-confirm-password" required>
+        </div>
+        <button class="form-button" onclick="resetPassword()">重置密码</button>
+        <div class="toggle-form">
+            返回登录？<a href="#" onclick="toggleForm('login')">登录</a>
+        </div>
+    </div>
 
     <script>
-        // 切换登录/注册表单
+        // 切换登录/注册/重置密码表单
         function toggleForm(formType) {
+            // 隐藏所有表单
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('register-form').style.display = 'none';
+            document.getElementById('reset-form').style.display = 'none';
+            
+            // 显示指定表单
             if (formType === 'login') {
                 document.getElementById('login-form').style.display = 'block';
-                document.getElementById('register-form').style.display = 'none';
-            } else {
-                document.getElementById('login-form').style.display = 'none';
+            } else if (formType === 'register') {
                 document.getElementById('register-form').style.display = 'block';
+            } else if (formType === 'reset') {
+                document.getElementById('reset-form').style.display = 'block';
             }
         }
 
-        // 注册功能
-        function register() {
+        // 注册功能 - 使用API
+        async function register() {
             const username = document.getElementById('register-username').value;
             const password = document.getElementById('register-password').value;
             const confirm = document.getElementById('register-confirm').value;
@@ -126,22 +154,32 @@
                 return;
             }
 
-            // 检查用户名是否已存在
-            const users = JSON.parse(localStorage.getItem('users') || '{}');
-            if (users[username]) {
-                alert('用户名已存在');
-                return;
+            try {
+                // 调用注册API
+                const response = await fetch('/api/users/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('注册成功！请登录');
+                    toggleForm('login');
+                } else {
+                    alert(result.message || '注册失败，请重试');
+                }
+            } catch (error) {
+                console.error('Register error:', error);
+                alert('注册失败，请检查网络连接或稍后重试');
             }
-
-            // 保存用户信息
-            users[username] = password;
-            localStorage.setItem('users', JSON.stringify(users));
-            alert('注册成功！请登录');
-            toggleForm('login');
         }
 
-        // 登录功能
-        function login() {
+        // 登录功能 - 使用API
+        async function login() {
             const username = document.getElementById('login-username').value;
             const password = document.getElementById('login-password').value;
 
@@ -150,16 +188,70 @@
                 return;
             }
 
-            const users = JSON.parse(localStorage.getItem('users') || '{}');
-            if (users[username] !== password) {
-                alert('用户名或密码错误');
+            try {
+                // 调用登录API
+                const response = await fetch('/api/users/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // 保存登录状态
+                    localStorage.setItem('currentUser', username);
+                    alert('登录成功！');
+                    window.location.href = 'home.html';
+                } else {
+                    alert(result.message || '登录失败，请检查用户名和密码');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('登录失败，请检查网络连接或稍后重试');
+            }
+        }
+        
+        // 重置密码功能 - 使用API
+        async function resetPassword() {
+            const username = document.getElementById('reset-username').value;
+            const newPassword = document.getElementById('reset-new-password').value;
+            const confirmPassword = document.getElementById('reset-confirm-password').value;
+            
+            if (!username || !newPassword || !confirmPassword) {
+                alert('请填写所有字段');
                 return;
             }
-
-            // 保存登录状态
-            localStorage.setItem('currentUser', username);
-            alert('登录成功！');
-            window.location.href = 'home.html';
+            
+            if (newPassword !== confirmPassword) {
+                alert('两次输入的新密码不一致');
+                return;
+            }
+            
+            try {
+                // 调用重置密码API
+                const response = await fetch('/api/users/reset-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, newPassword })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('密码重置成功！请使用新密码登录');
+                    toggleForm('login');
+                } else {
+                    alert(result.message || '密码重置失败，请重试');
+                }
+            } catch (error) {
+                console.error('Reset password error:', error);
+                alert('密码重置失败，请检查网络连接或稍后重试');
+            }
         }
     </script>
 </body>
