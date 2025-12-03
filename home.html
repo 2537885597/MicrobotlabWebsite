@@ -45,9 +45,20 @@
     </div>
     
     <script>
+        // 获取当前登录用户
+        function getCurrentUser() {
+            // 优先从Cookie获取，支持跨域名
+            const cookieMatch = document.cookie.match(/(?:^|;\s*)currentUser=(.*?)(?:;|$)/);
+            if (cookieMatch) {
+                return decodeURIComponent(cookieMatch[1]);
+            }
+            // 从localStorage获取，兼容本地测试
+            return localStorage.getItem('currentUser');
+        }
+        
         // 检查博客访问权限
         function checkBlogAccess() {
-            const currentUser = localStorage.getItem('currentUser');
+            const currentUser = getCurrentUser();
             if (!currentUser) {
                 alert('请先登录或注册才能进入博客界面！');
                 return false;
@@ -57,7 +68,7 @@
         
         // 检查生日祝福访问权限
         function checkBirthdayAccess() {
-            const currentUser = localStorage.getItem('currentUser');
+            const currentUser = getCurrentUser();
             // 唯一用户：只有用户名是"admin"或"虹宇"才能访问生日祝福
             if (currentUser !== 'admin' && currentUser !== '虹宇') {
                 alert('抱歉，您没有访问生日祝福的权限！');
@@ -68,11 +79,14 @@
         
         // 页面加载时检查登录状态
         window.onload = function() {
-            const currentUser = localStorage.getItem('currentUser');
+            const currentUser = getCurrentUser();
             const loginButton = document.getElementById('login-logout-btn');
             if (currentUser) {
                 loginButton.textContent = '登出';
                 loginButton.onclick = function() {
+                    // 清除Cookie
+                    document.cookie = 'currentUser=; path=/; domain=.microbotlab.site; expires=Thu, 01 Jan 1970 00:00:00 UTC; Secure; SameSite=Lax';
+                    // 清除localStorage
                     localStorage.removeItem('currentUser');
                     alert('已登出！');
                     window.location.reload();

@@ -204,7 +204,9 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    // 保存登录状态
+                    // 保存登录状态到Cookie，设置domain为.microbotlab.site，让主域名和子域名都能访问
+                    document.cookie = `currentUser=${encodeURIComponent(username)}; path=/; domain=.microbotlab.site; SameSite=Lax; Secure`;
+                    // 同时保存到localStorage，兼容本地测试
                     localStorage.setItem('currentUser', username);
                     alert('登录成功！');
                     window.location.href = 'home.html';

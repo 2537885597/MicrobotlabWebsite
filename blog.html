@@ -655,10 +655,21 @@
             }
         }
         
+        // 获取当前登录用户
+        function getCurrentUser() {
+            // 优先从Cookie获取，支持跨域名
+            const cookieMatch = document.cookie.match(/(?:^|;\s*)currentUser=(.*?)(?:;|$)/);
+            if (cookieMatch) {
+                return decodeURIComponent(cookieMatch[1]);
+            }
+            // 从localStorage获取，兼容本地测试
+            return localStorage.getItem('currentUser');
+        }
+        
         // 页面加载时初始化
         document.addEventListener('DOMContentLoaded', async function() {
             // 检查访问权限
-            const currentUser = localStorage.getItem('currentUser');
+            const currentUser = getCurrentUser();
             if (!currentUser) {
                 alert('请先登录或注册才能进入博客界面！');
                 window.location.href = 'login.html';
