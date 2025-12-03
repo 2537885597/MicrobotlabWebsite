@@ -49,8 +49,12 @@ export default async function handler(req, res) {
       return res.status(200).end();
     }
     
+    // 提取请求路径和操作类型
+    const path = req.url;
+    const action = req.body?.action;
+    
     // 用户注册
-    if (req.method === 'POST' && req.url.includes('/register')) {
+    if (req.method === 'POST' && (action === 'register' || path === '/api/users/register')) {
       const { username, password } = req.body;
       
       if (!username || !password) {
@@ -76,7 +80,7 @@ export default async function handler(req, res) {
     }
     
     // 用户登录
-    if (req.method === 'POST' && req.url.includes('/login')) {
+    if (req.method === 'POST' && (action === 'login' || path === '/api/users/login')) {
       const { username, password } = req.body;
       
       if (!username || !password) {
@@ -101,7 +105,7 @@ export default async function handler(req, res) {
     }
     
     // 忘记密码 - 重置密码
-    if (req.method === 'POST' && req.url.includes('/reset-password')) {
+    if (req.method === 'POST' && (action === 'reset-password' || path === '/api/users/reset-password')) {
       const { username, newPassword } = req.body;
       
       if (!username || !newPassword) {
@@ -124,7 +128,7 @@ export default async function handler(req, res) {
     }
     
     // 检查用户名是否存在
-    if (req.method === 'GET' && req.url.includes('/check-username')) {
+    if (req.method === 'GET' && (path.includes('/api/users') || path.includes('/check-username'))) {
       const username = req.query.username;
       
       if (!username) {
@@ -135,7 +139,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ exists: !!user });
     }
     
-    return res.status(405).json({ message: 'Method not allowed' });
+    return res.status(405).json({ message: 'Method not allowed', path: req.url });
   } catch (error) {
     console.error('User API Error:', {
       message: error.message,
